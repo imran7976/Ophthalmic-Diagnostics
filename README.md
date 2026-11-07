@@ -97,8 +97,8 @@ All models were evaluated using a **5-fold Stratified Cross-Validation protocol*
 
 ### 1. Overall Performance Progression
 
-| Methodology | Accuracy | Precision | Recall (Sens.) | F1-Score | Cohen's Kappa ($\kappa$) | Specificity | MCC | Macro AUC |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| Methodology | Accuracy | Precision | Recall (Sens.) | F1-Score | Cohen's Kappa (κ) | Specificity | MCC | Macro AUC |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Traditional Features** *(GLCM + HOG + SVM)* | 54.63% | 0.6100 | 0.5747 | 0.5880 | 0.4649 | 94.62% | 0.4657 | 0.8840 |
 | **Deep CNN Features** *(DenseNet121 + SVM)* | 78.92% | 0.8300 | 0.8331 | 0.8312 | 0.7536 | 97.51% | 0.7539 | 0.9680 |
 | **Hybrid Feature Fusion** *(DenseNet + GLCM/HOG)* | 78.95% | 0.8300 | 0.8368 | 0.8341 | 0.7540 | 97.52% | 0.7543 | 0.9690 |
