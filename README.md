@@ -39,40 +39,54 @@ This repository presents the official implementation of our **Hybrid CNN-Transfo
 
 ```mermaid
 flowchart TD
-    A["Raw Retinal Fundus Image\n(224 x 224 x 3)"] --> B["Dual-Domain Preprocessing Pipeline"]
-    
-    subgraph Preprocessing ["Dual-Domain Enhancement"]
-        B --> B1["CIELAB Color Space Conversion\n(Isolate L Channel)"]
-        B1 --> B2["CLAHE Enhancement\n(clip=2.0, grid=8x8)"]
-        B1 --> B3["Fourier High-Pass Filter (DFT)\n(radius=30)"]
-        B2 & B3 --> B4["Weighted Blend\nI_final = 0.8 I_CLAHE + 0.3 I_Fourier"]
-        B4 --> B5["ImageNet Normalization"]
+    A["Raw Retinal Fundus Image<br/>(224 × 224 × 3)"] --> B1
+
+    subgraph Preprocessing ["Dual-Domain Enhancement Pipeline"]
+        B1["CIELAB Color Space Conversion<br/>(Isolate L Channel)"]
+        B2["CLAHE Enhancement<br/>(clip=2.0, grid=8×8)"]
+        B3["Fourier High-Pass Filter (DFT)<br/>(radius=30)"]
+        B4["Weighted Fusion<br/>I_final = 0.8·I_CLAHE + 0.3·I_Fourier"]
+        B5["ImageNet Normalization"]
+
+        B1 --> B2
+        B1 --> B3
+        B2 --> B4
+        B3 --> B4
+        B4 --> B5
     end
 
-    B5 --> C1["Branch 1: EfficientNet-B0\n(Last 2 MBConv Unfrozen)"]
-    B5 --> C2["Branch 2: VGG16\n(Last Conv Block Unfrozen)"]
-    B5 --> C3["Branch 3: ViT-Base-Patch16\n(Last Transformer Block Unfrozen)"]
+    B5 --> C1
+    B5 --> C2
+    B5 --> C3
 
     subgraph Feature_Extraction ["Tri-Branch Feature Extraction"]
-        C1 --> D1["f_eff ∈ R^1280\n(Multi-Scale Structures)"]
-        C2 --> D2["f_vgg ∈ R^4096\n(Hierarchical Textures)"]
-        C3 --> D3["f_vit ∈ R^768\n(Global Context & Geometry)"]
+        C1["Branch 1: EfficientNet-B0<br/>(Last 2 MBConv Unfrozen)"] --> D1["f_eff ∈ ℝ¹²⁸⁰<br/>(Multi-Scale Structures)"]
+        C2["Branch 2: VGG16<br/>(Last Conv Block Unfrozen)"] --> D2["f_vgg ∈ ℝ⁴⁰⁹⁶<br/>(Hierarchical Textures)"]
+        C3["Branch 3: ViT-Base-Patch16<br/>(Last Transformer Block Unfrozen)"] --> D3["f_vit ∈ ℝ⁷⁶⁸<br/>(Global Context & Geometry)"]
     end
 
-    D1 & D2 & D3 --> E["Feature Concatenation Layer\nZ = [f_eff ⊕ f_vgg ⊕ f_vit] ∈ R^6144"]
+    D1 --> E
+    D2 --> E
+    D3 --> E
+
+    E["Feature Concatenation Layer<br/>Z = [f_eff ⊕ f_vgg ⊕ f_vit] ∈ ℝ⁶¹⁴⁴"]
 
     subgraph Fusion_Head ["Hierarchical MLP Fusion Head"]
-        E --> F1["Linear(6144 -> 1024) + BatchNorm + ReLU + Dropout(0.5)"]
-        F1 --> F2["Linear(1024 -> 512) + BatchNorm + ReLU + Dropout(0.5)"]
-        F2 --> F3["Linear(512 -> 10 Classes)"]
+        F1["Linear(6144 → 1024)<br/>+ BatchNorm + ReLU + Dropout(0.5)"]
+        F2["Linear(1024 → 512)<br/>+ BatchNorm + ReLU + Dropout(0.5)"]
+        F3["Linear(512 → 10 Classes)"]
+        F1 --> F2
+        F2 --> F3
     end
 
-    F3 --> G["Test Time Augmentation (TTA)\nHorizontal Flip Averaging"]
-    G --> H["10-Class Disease Prediction + Grad-CAM Visualizations"]
+    E --> F1
+    F3 --> G["Test Time Augmentation (TTA)<br/>Horizontal Flip Averaging"]
+    G --> H["10-Class Disease Prediction<br/>+ Multi-Branch Grad-CAM Visualizations"]
 
-    style A fill:#e1f5fe,stroke:#0288d1,stroke-width:2px
-    style H fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-    style E fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style A fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#01579b
+    style E fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#e65100
+    style H fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20
+    style G fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#4a148c
 ```
 
 ---
@@ -84,7 +98,7 @@ All models were evaluated using a **5-fold Stratified Cross-Validation protocol*
 ### 1. Overall Performance Progression
 
 | Methodology | Accuracy | Precision | Recall (Sens.) | F1-Score | Cohen's Kappa ($\kappa$) | Specificity | MCC | Macro AUC |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Traditional Features** *(GLCM + HOG + SVM)* | 54.63% | 0.6100 | 0.5747 | 0.5880 | 0.4649 | 94.62% | 0.4657 | 0.8840 |
 | **Deep CNN Features** *(DenseNet121 + SVM)* | 78.92% | 0.8300 | 0.8331 | 0.8312 | 0.7536 | 97.51% | 0.7539 | 0.9680 |
 | **Hybrid Feature Fusion** *(DenseNet + GLCM/HOG)* | 78.95% | 0.8300 | 0.8368 | 0.8341 | 0.7540 | 97.52% | 0.7543 | 0.9690 |
@@ -173,7 +187,7 @@ Input Fundus ──► EfficientNet-B0 (MBConv[-1])  ──► Captures multi-sc
 
 ### 1. Installation
 ```bash
-git clone https://github.com/GGTuran/Ophthalmic-Diagnostics.git
+git clone https://github.com/imran7976/Ophthalmic-Diagnostics.git
 cd Ophthalmic-Diagnostics
 
 # Create virtual environment
